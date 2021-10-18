@@ -11,4 +11,7 @@ interface MainView {
     fun showConnectDialog()
     fun showReceivedData(data: String)
     fun showError(throwable: Throwable)
+    fun showConnected(name: String)
+    fun showConnecting(isConnecting: Boolean)
+    fun showConnecting(name: String)
 }

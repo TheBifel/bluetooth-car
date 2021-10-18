@@ -3,6 +3,7 @@ package dev.bifel.bluetoothcar
 import android.bluetooth.BluetoothAdapter
 import android.bluetooth.BluetoothDevice
 import android.bluetooth.BluetoothSocket
+import io.reactivex.Completable
 import io.reactivex.subjects.PublishSubject
 import java.io.InputStream
 import java.io.OutputStream
@@ -43,11 +44,13 @@ class BluetoothHelper {
         }
     }
 
-    fun connectTo(device: BluetoothDevice) {
-        val uuid =
-            UUID.fromString("00001101-0000-1000-8000-00805F9B34FB") //Standard SerialPortService ID
-        socket = device.createRfcommSocketToServiceRecord(uuid).apply { connect() }
-    }
+    fun connectTo(device: BluetoothDevice) =
+        Completable.fromCallable {
+            val uuid =
+                UUID.fromString("00001101-0000-1000-8000-00805F9B34FB") //Standard SerialPortService ID
+            socket = device.createRfcommSocketToServiceRecord(uuid).apply { connect() }
+            ""
+        }
 
     fun closeConnection() {
         socket?.close()

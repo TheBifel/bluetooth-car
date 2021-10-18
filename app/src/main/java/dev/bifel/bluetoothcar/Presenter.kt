@@ -47,7 +47,17 @@ class Presenter {
     }
 
     fun connectTo(device: BluetoothDevice) = try {
-        helper.connectTo(device)
+        compositeDisposable.add(
+            helper.connectTo(device)
+                .subscribeOn(Schedulers.io())
+                .observeOn(AndroidSchedulers.mainThread())
+                .doOnSubscribe {
+                    view?.showConnecting(device.name)
+                    view?.showConnecting(true)
+                }
+                .doAfterTerminate { view?.showConnecting(false) }
+                .subscribe({ view?.showConnected(device.name) }, { view?.showError(it) })
+        )
     } catch (t: Throwable) {
         view?.showError(t)
     }
