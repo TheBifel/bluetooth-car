@@ -3,7 +3,10 @@ package dev.bifel.bluetoothcar
 import android.bluetooth.BluetoothAdapter
 import android.bluetooth.BluetoothDevice
 import android.bluetooth.BluetoothSocket
+import io.reactivex.BackpressureStrategy
 import io.reactivex.Completable
+import io.reactivex.Observable
+import io.reactivex.android.schedulers.AndroidSchedulers
 import io.reactivex.subjects.PublishSubject
 import java.io.InputStream
 import java.io.OutputStream
@@ -15,7 +18,7 @@ import java.util.*
  *
  * @author Bohdan Ishchenko
  */
-class BluetoothHelper {
+object BluetoothHelper {
     private val adapter = BluetoothAdapter.getDefaultAdapter()
     private var socket: BluetoothSocket? = null
 
@@ -30,7 +33,7 @@ class BluetoothHelper {
     val isEnabled: Boolean
         get() = adapter.isEnabled
 
-    val receivedDataObservable = PublishSubject.create<String> {
+    private val receivedDataSubject = PublishSubject.create<String> {
         try {
             val packetBytes = ByteArray(6)
             while (!it.isDisposed) {
@@ -44,12 +47,15 @@ class BluetoothHelper {
         }
     }
 
+    val receivedDataObservable: Observable<String>
+        get() = receivedDataSubject.toFlowable(BackpressureStrategy.BUFFER)
+            .observeOn(AndroidSchedulers.mainThread()).toObservable()
+
     fun connectTo(device: BluetoothDevice) =
-        Completable.fromCallable {
+        Completable.fromAction {
             val uuid =
                 UUID.fromString("00001101-0000-1000-8000-00805F9B34FB") //Standard SerialPortService ID
             socket = device.createRfcommSocketToServiceRecord(uuid).apply { connect() }
-            ""
         }
 
     fun closeConnection() {

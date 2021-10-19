@@ -1,22 +1,24 @@
 package dev.bifel.bluetoothcar
 
 import android.annotation.SuppressLint
-import android.app.Activity
 import android.bluetooth.BluetoothAdapter
+import android.bluetooth.BluetoothDevice
 import android.content.Intent
 import android.os.Bundle
 import android.view.View
 import android.widget.TextView
 import android.widget.Toast
+import androidx.fragment.app.FragmentActivity
 
 @SuppressLint("SetTextI18n")
-class MainActivity : Activity(), MainView {
+class MainActivity : FragmentActivity(), MainView, ListDialog.OnListItemSelectListener {
     private lateinit var txtReceived: TextView
     private lateinit var progressConnecting: View
-    private val presenter = Presenter()
+    private lateinit var presenter: Presenter
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        presenter = Presenter(Cache(this))
         setContentView(R.layout.activity_main)
         txtReceived = findViewById(R.id.lblInput)
         progressConnecting = findViewById(R.id.progress_connecting)
@@ -63,9 +65,11 @@ class MainActivity : Activity(), MainView {
     override fun showError(throwable: Throwable) =
         Toast.makeText(this, throwable.localizedMessage, Toast.LENGTH_SHORT).show()
 
-    override fun showConnectDialog() {
-        // todo
-        presenter.connectTo(presenter.bondedDevices.first())
+    override fun showConnectDialog() =
+        ListDialog.newInstance().show(supportFragmentManager, "ListDialog")
+
+    override fun onListItemSelected(device: BluetoothDevice) {
+        presenter.connectTo(device)
     }
 
 

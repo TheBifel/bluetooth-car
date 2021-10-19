@@ -11,26 +11,31 @@ import io.reactivex.schedulers.Schedulers
  *
  * @author Bohdan Ishchenko
  */
-class Presenter {
-
-    private val helper = BluetoothHelper()
+class Presenter(private val cache: Cache) {
     private var view: MainView? = null
     private var compositeDisposable = CompositeDisposable()
-    val bondedDevices
-        get() = helper.bondedDevices
 
-    fun sendData(data: Data) = helper.send(data)
+    fun sendData(data: Data) = BluetoothHelper.send(data)
 
     fun onResume(view: MainView) {
         this.view = view
-        if (helper.isEnabled) {
-            if (helper.isConnected) {
+        if (BluetoothHelper.isEnabled) {
+            if (BluetoothHelper.isConnected) {
                 compositeDisposable.add(
-                    helper.receivedDataObservable
+                    BluetoothHelper.receivedDataObservable
                         .subscribeOn(Schedulers.newThread())
                         .observeOn(AndroidSchedulers.mainThread())
                         .subscribe(view::showReceivedData, view::showError)
                 )
+            } else if (cache.lastConnection != null) {
+                val lastConnection = cache.lastConnection
+                val device =
+                    BluetoothHelper.bondedDevices.firstOrNull { it.address == lastConnection }
+                if (device == null) {
+                    view.showConnectDialog()
+                } else {
+                    connectTo(device)
+                }
             } else {
                 view.showConnectDialog()
             }
@@ -39,7 +44,7 @@ class Presenter {
         }
     }
 
-    fun onDestroy() = helper.closeConnection()
+    fun onDestroy() = BluetoothHelper.closeConnection()
 
     fun onPause() {
         compositeDisposable.dispose()
@@ -48,7 +53,8 @@ class Presenter {
 
     fun connectTo(device: BluetoothDevice) = try {
         compositeDisposable.add(
-            helper.connectTo(device)
+            BluetoothHelper.connectTo(device)
+                .doOnComplete { cache.lastConnection = device.address }
                 .subscribeOn(Schedulers.io())
                 .observeOn(AndroidSchedulers.mainThread())
                 .doOnSubscribe {
