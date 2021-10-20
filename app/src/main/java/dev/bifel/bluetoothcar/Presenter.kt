@@ -1,8 +1,11 @@
 package dev.bifel.bluetoothcar
 
 import android.bluetooth.BluetoothDevice
+import android.os.Handler
+import android.os.Looper
 import io.reactivex.android.schedulers.AndroidSchedulers
 import io.reactivex.disposables.CompositeDisposable
+import io.reactivex.plugins.RxJavaPlugins
 import io.reactivex.schedulers.Schedulers
 
 /**
@@ -14,6 +17,16 @@ import io.reactivex.schedulers.Schedulers
 class Presenter(private val cache: Cache) {
     private var view: MainView? = null
     private var compositeDisposable = CompositeDisposable()
+
+    init {
+        val handler = Handler(Looper.getMainLooper())
+        RxJavaPlugins.setErrorHandler {
+            handler.post {
+                view?.showError(it)
+                view?.showConnecting(false)
+            }
+        }
+    }
 
     fun sendData(data: Data) = BluetoothHelper.send(data)
 
