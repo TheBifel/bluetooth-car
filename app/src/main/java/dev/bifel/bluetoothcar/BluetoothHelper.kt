@@ -63,7 +63,7 @@ object BluetoothHelper {
     }
 
     fun send(data: Data) {
-        outputStream?.write((String.format("%03d", data.strength - 255) + data.turn).toByteArray())
+        outputStream?.write((String.format("%03d", data.strength) + data.turn).toByteArray())
     }
 
 
